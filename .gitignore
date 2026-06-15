@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Runtime output
+logs/*
+merge/*
+uploads/source/*
+working/*
+!logs/.gitkeep
+!merge/.gitkeep
+!uploads/source/.gitkeep
+!working/.gitkeep
+
+# Environment and local configuration
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs and diagnostics
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test and coverage output
+coverage/
+.nyc_output/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
