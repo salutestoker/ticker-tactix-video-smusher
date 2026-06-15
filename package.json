@@ -4,7 +4,7 @@
   "description": "Hosted browser-based video merger for local intro/outro assets and Blob source uploads.",
   "main": "server.js",
   "scripts": {
-    "build": "node scripts/prune-ffprobe.js && esbuild src/client.js --bundle --format=iife --platform=browser --target=es2020 --outfile=public/renderer.js",
+    "build": "node scripts/prune-ffprobe.js && node scripts/prepare-binaries.js && esbuild src/client.js --bundle --format=iife --platform=browser --target=es2020 --outfile=public/renderer.js",
     "start": "node server.js",
     "dev": "node server.js",
     "verify:assets": "node scripts/verify-assets.js"

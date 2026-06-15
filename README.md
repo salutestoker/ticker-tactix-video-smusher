@@ -30,6 +30,10 @@ APP_ACCESS_TOKEN=
 
 `BLOB_READ_WRITE_TOKEN` is required. `MAX_SOURCE_UPLOAD_MB` is optional and defaults to `150`. `APP_ACCESS_TOKEN` is optional; when set, the UI prompts users for that token before API calls.
 
+`APP_ACCESS_TOKEN` does not come from Vercel. If you want to gate access to the tool, create your own long random value and set it as `APP_ACCESS_TOKEN`. If you do not need that extra gate, leave it unset.
+
+After adding or changing Vercel environment variables, redeploy the project. Existing deployments keep the environment they were built with and will not see newly-added variables.
+
 The included `vercel.json` sets the framework preset to Other, runs `npm run build`, enables Fluid compute, gives each `api/**/*.js` function up to 300 seconds, and includes `assets/**` in the function bundle.
 
 ## Asset Setup

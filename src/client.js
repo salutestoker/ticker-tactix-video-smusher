@@ -159,12 +159,12 @@ function renderStatus() {
     {
       label: 'FFmpeg',
       ok: latestStatus.ffmpeg.available,
-      detail: latestStatus.ffmpeg.available ? `Available (${latestStatus.ffmpeg.source})` : 'Missing FFmpeg'
+      detail: latestStatus.ffmpeg.available ? `Available (${latestStatus.ffmpeg.source})` : missingToolDetail('FFmpeg', latestStatus.ffmpeg)
     },
     {
       label: 'FFprobe',
       ok: latestStatus.ffprobe.available,
-      detail: latestStatus.ffprobe.available ? `Available (${latestStatus.ffprobe.source})` : 'Missing FFprobe'
+      detail: latestStatus.ffprobe.available ? `Available (${latestStatus.ffprobe.source})` : missingToolDetail('FFprobe', latestStatus.ffprobe)
     },
     {
       label: 'Temporary folders',
@@ -222,6 +222,10 @@ function foldersWritable(status) {
     status.writable.working &&
     status.writable.logs
   );
+}
+
+function missingToolDetail(label, tool) {
+  return tool && tool.reason ? `${label} unavailable: ${tool.reason}` : `Missing ${label}`;
 }
 
 function canMerge() {
