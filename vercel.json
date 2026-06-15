@@ -6,11 +6,7 @@
   "functions": {
     "api/**/*.js": {
       "maxDuration": 300,
-      "includeFiles": [
-        "assets/**",
-        "node_modules/ffmpeg-static/**",
-        "node_modules/ffprobe-static/**"
-      ]
+      "includeFiles": "{assets/**,node_modules/ffmpeg-static/**,node_modules/ffprobe-static/**}"
     }
   }
 }
