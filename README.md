@@ -4,7 +4,9 @@ Browser-based video merger for Vercel. The app lets a user upload one source vid
 
 ## Architecture
 
-- Express is exported from `server.js` for Vercel and still supports local `npm start`.
+- The Express app lives in `lib/app.js`.
+- `server.js` is only the local `npm start` runner.
+- Vercel invokes thin wrappers in `api/`, and each wrapper delegates to the shared Express app.
 - Static browser files live in `public/`.
 - Source uploads go directly from the browser to private Vercel Blob.
 - Completed merged MP4 files are saved to private Vercel Blob.
@@ -28,7 +30,7 @@ APP_ACCESS_TOKEN=
 
 `BLOB_READ_WRITE_TOKEN` is required. `MAX_SOURCE_UPLOAD_MB` is optional and defaults to `150`. `APP_ACCESS_TOKEN` is optional; when set, the UI prompts users for that token before API calls.
 
-The included `vercel.json` sets the framework preset to Other, runs `npm run build`, enables Fluid compute, gives the Express function up to 300 seconds, and includes `assets/**` in the function bundle.
+The included `vercel.json` sets the framework preset to Other, runs `npm run build`, enables Fluid compute, gives each `api/**/*.js` function up to 300 seconds, and includes `assets/**` in the function bundle.
 
 ## Asset Setup
 
