@@ -94,22 +94,67 @@ mergeForm.addEventListener('submit', async (event) => {
 
 async function uploadSourceVideo(file) {
   const pathname = `sources/${Date.now()}-${sanitizePathSegment(file.name || 'source-video.mp4')}`;
-  return upload(pathname, file, {
-    access: 'private',
-    handleUploadUrl: '/api/blob/upload',
-    contentType: file.type || 'application/octet-stream',
-    multipart: file.size > LARGE_UPLOAD_THRESHOLD,
-    clientPayload: JSON.stringify({
-      name: file.name,
-      size: file.size,
-      type: file.type
-    }),
-    headers: authHeaders(),
-    onUploadProgress: (event) => {
-      const percentage = Number.isFinite(event.percentage) ? Math.round(event.percentage) : 0;
-      setProgress(`Uploading source video... ${percentage}%`);
-    }
+  const multipart = file.size > LARGE_UPLOAD_THRESHOLD;
+  const clientPayload = JSON.stringify({
+    name: file.name,
+    size: file.size,
+    type: file.type
   });
+
+  try {
+    return await upload(pathname, file, {
+      access: 'private',
+      handleUploadUrl: '/api/blob/upload',
+      contentType: file.type || 'application/octet-stream',
+      multipart,
+      clientPayload,
+      headers: authHeaders(),
+      onUploadProgress: (event) => {
+        const percentage = Number.isFinite(event.percentage) ? Math.round(event.percentage) : 0;
+        setProgress(`Uploading source video... ${percentage}%`);
+      }
+    });
+  } catch (error) {
+    if (isClientTokenError(error)) {
+      const message = await getUploadPreparationError(pathname, clientPayload, multipart);
+      if (message) {
+        throw new Error(message);
+      }
+    }
+    throw error;
+  }
+}
+
+async function getUploadPreparationError(pathname, clientPayload, multipart) {
+  try {
+    const response = await fetchWithAuth('/api/blob/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'blob.generate-client-token',
+        payload: {
+          pathname,
+          clientPayload,
+          multipart
+        }
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      return data.message || data.error || 'The upload token could not be generated.';
+    }
+    if (!data.clientToken) {
+      return data.message || data.error || 'The upload token response was missing a client token.';
+    }
+  } catch (_error) {
+    return '';
+  }
+  return '';
+}
+
+function isClientTokenError(error) {
+  return Boolean(error && /retrieve\s+the client token/i.test(error.message || ''));
 }
 
 async function refreshStatus() {
@@ -143,6 +188,7 @@ async function refreshAssets(force = false) {
 }
 
 function renderStatus() {
+  const blobIsReady = isBlobReady(latestStatus);
   const checks = [
     {
       label: 'Intro/outro assets',
@@ -153,8 +199,8 @@ function renderStatus() {
     },
     {
       label: 'Blob storage',
-      ok: latestStatus.blob && latestStatus.blob.configured,
-      detail: latestStatus.blob && latestStatus.blob.configured ? 'Ready for source uploads and outputs' : 'Missing BLOB_READ_WRITE_TOKEN'
+      ok: blobIsReady,
+      detail: latestStatus.blob && latestStatus.blob.message ? latestStatus.blob.message : 'Missing BLOB_READ_WRITE_TOKEN'
     },
     {
       label: 'FFmpeg',
@@ -224,6 +270,14 @@ function foldersWritable(status) {
   );
 }
 
+function isBlobReady(status) {
+  return Boolean(
+    status &&
+    status.blob &&
+    (status.blob.available === undefined ? status.blob.configured : status.blob.available)
+  );
+}
+
 function missingToolDetail(label, tool) {
   return tool && tool.reason ? `${label} unavailable: ${tool.reason}` : `Missing ${label}`;
 }
@@ -235,8 +289,7 @@ function canMerge() {
     latestStatus.assets.available &&
     latestStatus.assets.introCount > 0 &&
     latestStatus.assets.outroCount > 0 &&
-    latestStatus.blob &&
-    latestStatus.blob.configured &&
+    isBlobReady(latestStatus) &&
     latestStatus.ffmpeg.available &&
     latestStatus.ffprobe.available &&
     foldersWritable(latestStatus) &&
@@ -264,8 +317,8 @@ function defaultProgressMessage() {
   if (!latestStatus.assets || !latestStatus.assets.available || latestStatus.assets.introCount === 0 || latestStatus.assets.outroCount === 0) {
     return 'Add intro and outro videos to assets/intro and assets/outro.';
   }
-  if (!latestStatus.blob || !latestStatus.blob.configured) {
-    return 'Configure BLOB_READ_WRITE_TOKEN before merging.';
+  if (!isBlobReady(latestStatus)) {
+    return latestStatus.blob && latestStatus.blob.message ? latestStatus.blob.message : 'Configure BLOB_READ_WRITE_TOKEN before merging.';
   }
   if (!latestStatus.ffmpeg.available || !latestStatus.ffprobe.available) {
     return 'Install dependencies so FFmpeg and FFprobe are available.';

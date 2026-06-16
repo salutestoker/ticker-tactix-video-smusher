@@ -69,8 +69,11 @@ http://localhost:3217
 To use the full upload and merge flow locally, provide `BLOB_READ_WRITE_TOKEN` in your environment or pull it from Vercel:
 
 ```bash
-vercel env pull
+vercel link
+vercel env pull .env.local --yes
 ```
+
+`npm start` loads `.env.local` automatically for local runs. If Blob storage suddenly fails with a client token error, re-pull `.env.local`, confirm `BLOB_READ_WRITE_TOKEN` exists in the Vercel project, then redeploy if you changed production env vars.
 
 ## Checks
 
