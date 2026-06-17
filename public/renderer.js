@@ -2020,6 +2020,8 @@
     clearMessages();
     if (!selectedFile) {
       showError("No video was selected.");
+    } else if (latestStatus && isSelectedFileTooLarge()) {
+      showError(fileTooLargeMessage());
     }
     renderMergeButton();
   });
@@ -2232,7 +2234,7 @@
   }
   function canMerge() {
     return Boolean(
-      latestStatus && latestStatus.assets && latestStatus.assets.available && latestStatus.assets.introCount > 0 && latestStatus.assets.outroCount > 0 && isBlobReady(latestStatus) && latestStatus.ffmpeg.available && latestStatus.ffprobe.available && foldersWritable(latestStatus) && !latestStatus.activeJob && selectedFile && introSelect.value && outroSelect.value && !isMerging
+      latestStatus && latestStatus.assets && latestStatus.assets.available && latestStatus.assets.introCount > 0 && latestStatus.assets.outroCount > 0 && isBlobReady(latestStatus) && latestStatus.ffmpeg.available && latestStatus.ffprobe.available && foldersWritable(latestStatus) && !latestStatus.activeJob && selectedFile && !isSelectedFileTooLarge() && introSelect.value && outroSelect.value && !isMerging
     );
   }
   function renderMergeButton() {
@@ -2264,7 +2266,22 @@
     if (!selectedFile) {
       return "Ready. Choose a source video to begin.";
     }
+    if (isSelectedFileTooLarge()) {
+      return fileTooLargeMessage();
+    }
     return "Ready to merge.";
+  }
+  function isSelectedFileTooLarge() {
+    return Boolean(
+      selectedFile && latestStatus && latestStatus.maxSourceUploadMb && selectedFile.size > latestStatus.maxSourceUploadMb * 1024 * 1024
+    );
+  }
+  function fileTooLargeMessage() {
+    const limit = latestStatus && latestStatus.maxSourceUploadMb ? latestStatus.maxSourceUploadMb : 0;
+    if (latestStatus && latestStatus.mode === "vercel") {
+      return `This file is too large for hosted processing. Use a file under ${limit} MB or run the merge locally.`;
+    }
+    return `This file is too large. Use a file under ${limit} MB.`;
   }
   function clearMessages() {
     errorBox.classList.add("hidden");

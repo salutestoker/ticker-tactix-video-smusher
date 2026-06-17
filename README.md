@@ -24,15 +24,17 @@ Only files directly inside those two folders are selectable. Supported intro/out
 
 ```text
 BLOB_READ_WRITE_TOKEN=...
-MAX_SOURCE_UPLOAD_MB=150
+MAX_SOURCE_UPLOAD_MB=100
 APP_ACCESS_TOKEN=
 ```
 
-`BLOB_READ_WRITE_TOKEN` is required. `MAX_SOURCE_UPLOAD_MB` is optional and defaults to `150`. `APP_ACCESS_TOKEN` is optional; when set, the UI prompts users for that token before API calls.
+`BLOB_READ_WRITE_TOKEN` is required. `MAX_SOURCE_UPLOAD_MB` is optional and defaults to `100` on Vercel and `150` locally. On Vercel it is capped at `100` even if a higher value is configured, because Vercel Functions provide 500 MB of `/tmp` space and the merge process needs temporary room for the source, normalized clips, and final MP4. `APP_ACCESS_TOKEN` is optional; when set, the UI prompts users for that token before API calls.
 
 `APP_ACCESS_TOKEN` does not come from Vercel. If you want to gate access to the tool, create your own long random value and set it as `APP_ACCESS_TOKEN`. If you do not need that extra gate, leave it unset.
 
 After adding or changing Vercel environment variables, redeploy the project. Existing deployments keep the environment they were built with and will not see newly-added variables.
+
+Files around hundreds of MB should be merged locally or in a dedicated worker/VM with more scratch disk. A 439 MB source file is too large for this hosted Vercel Function flow before normalization and final output are considered.
 
 The included `vercel.json` sets the framework preset to Other, runs `npm run build`, enables Fluid compute, gives each `api/**/*.js` function up to 300 seconds, and includes `assets/**` in the function bundle.
 
@@ -97,7 +99,7 @@ vercel build
 
 ## Output Format
 
-Each input is normalized before merging, then the final output is stabilized as a constant 30fps MP4:
+Each input is normalized to the same format before merging, then the normalized clips are concatenated without a second full re-encode:
 
 - MP4
 - H.264 video
